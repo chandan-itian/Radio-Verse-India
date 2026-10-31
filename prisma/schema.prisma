@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Station {
+  id              String           @id @default(uuid())
+  externalSource  String           @default("curated") // curated, radio-browser, admin
+  externalId      String?          @unique
+  name            String
+  slug            String           @unique
+  language        String           @default("hindi")
+  countryCode     String           @default("IN")
+  state           String?
+  logoUrl         String?
+  homepageUrl     String?
+  description     String?
+  status          String           @default("active") // active, disabled, restricted
+  isFeatured      Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  endpoints       StreamEndpoint[]
+  categories      StationCategory[]
+
+  @@index([language])
+  @@index([state])
+  @@index([status])
+  @@index([isFeatured])
+}
+
+model StreamEndpoint {
+  id                  String              @id @default(uuid())
+  stationId           String
+  station             Station             @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  streamUrl           String
+  streamType          String              @default("unknown") // hls, mp3, aac, unknown
+  codec               String?
+  bitrate             Int?
+  authorizationStatus String              @default("verified_playable") // verified_playable, unverified, official_link_only, restricted, unavailable
+  verificationStatus  String              @default("unknown") // healthy, degraded, unavailable, unknown
+  priority            Int                 @default(1)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  healthChecks        StreamHealthCheck[]
+
+  @@index([stationId])
+  @@index([verificationStatus])
+}
+
+model Category {
+  id             String            @id @default(uuid())
+  slug           String            @unique
+  nameEn         String
+  nameHi         String
+  icon           String?
+  descriptionEn  String?
+  descriptionHi  String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  stations       StationCategory[]
+}
+
+model StationCategory {
+  id         String   @id @default(uuid())
+  stationId  String
+  categoryId String
+  station    Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([stationId, categoryId])
+  @@index([stationId])
+  @@index([categoryId])
+}
+
+model StreamHealthCheck {
+  id                 String         @id @default(uuid())
+  endpointId         String
+  endpoint           StreamEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  checkedAt          DateTime       @default(now())
+  result             String         // healthy, degraded, unavailable
+  httpStatus         Int?
+  responseTimeMs     Int?
+  errorCode          String?
+  diagnosticSummary  String?
+
+  @@index([endpointId])
+  @@index([checkedAt])
+  @@index([result])
+}
+
+model User {
+  id            String          @id @default(uuid())
+  email         String          @unique
+  passwordHash  String
+  name          String
+  role          String          @default("VIEWER") // SUPER_ADMIN, ADMIN, EDITOR, VIEWER
+  accountStatus String          @default("ACTIVE") // ACTIVE, SUSPENDED
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  auditLogs     AdminAuditLog[]
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  actorEmail String
+  actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  action     String   // e.g. STATION_CREATE, HEALTH_RECHECK, CATEGORY_UPDATE
+  targetType String   // Station, Category, StreamEndpoint, User
+  targetId   String?
+  timestamp  DateTime @default(now())
+  metadata   String?  // JSON stringified details
+
+  @@index([actorId])
+  @@index([action])
+  @@index([timestamp])
+}
