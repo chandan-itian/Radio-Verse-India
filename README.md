@@ -112,7 +112,7 @@ Access the administrative interface at `/admin`.
 
 - **Creator & Developer**: **Chandan Raj**
 - **GitHub**: [@chandan-itian](https://github.com/chandan-itian)
-- **Live Website URL: https://chandan-itian.github.io/Radio-Verse-India/
+- **Live Website URL**: https://chandan-itian.github.io/Radio-Verse-India/
 
 <div align="center">
   <sub>Made with ❤️ by <b>Chandan Raj</b></sub>
