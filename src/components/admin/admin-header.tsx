@@ -17,19 +17,35 @@ export function AdminHeader() {
     fetch("/api/v1/admin/me")
       .then((res) => {
         if (!res.ok) {
-          router.push("/admin/login");
-        } else {
-          return res.json();
+          throw new Error("unauthorized");
         }
+        return res.json();
       })
       .then((data) => {
         if (data?.user) setAdminUser(data.user);
       })
-      .catch(() => router.push("/admin/login"));
+      .catch(() => {
+        // Check offline APK admin session
+        const stored = localStorage.getItem("radioverse_admin_offline");
+        if (stored) {
+          try {
+            setAdminUser(JSON.parse(stored));
+            return;
+          } catch {
+            // ignore
+          }
+        }
+        router.push("/admin/login");
+      });
   }, [router]);
 
   const handleLogout = async () => {
-    await fetch("/api/v1/admin/logout", { method: "POST" });
+    localStorage.removeItem("radioverse_admin_offline");
+    try {
+      await fetch("/api/v1/admin/logout", { method: "POST" });
+    } catch {
+      // ignore
+    }
     router.push("/admin/login");
   };
 

@@ -46,3 +46,11 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# android
+.gradle/
+build/
+android/app/build/
+android/build/
+android/.gradle/
+*.apk

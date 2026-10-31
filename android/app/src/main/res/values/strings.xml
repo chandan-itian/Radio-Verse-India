@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RadioVerse India</string>
+    <string name="title_activity_main">RadioVerse India</string>
+    <string name="package_name">in.radioverse.app</string>
+    <string name="custom_url_scheme">in.radioverse.app</string>
+</resources>

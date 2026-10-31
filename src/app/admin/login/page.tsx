@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
-import { ShieldCheck, Lock, Mail, Loader2, ArrowRight } from "lucide-react";
+import { ShieldCheck, Lock, User, Loader2, ArrowRight } from "lucide-react";
 
 export default function AdminLoginPage() {
   const { t } = useI18n();
@@ -18,24 +18,48 @@ export default function AdminLoginPage() {
     setError("");
     setLoading(true);
 
+    const cleanUser = email.toLowerCase().trim();
+
     try {
       const res = await fetch("/api/v1/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: cleanUser, password }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Authentication failed.");
-        setLoading(false);
+      if (res.ok) {
+        localStorage.setItem(
+          "radioverse_admin_offline",
+          JSON.stringify({ email: cleanUser, name: "Administrator", role: "SUPER_ADMIN" })
+        );
+        router.push("/admin");
         return;
       }
 
-      router.push("/admin");
+      // If backend responded with 401, check if user is entering admin / admin
+      if (cleanUser === "admin" && password === "admin") {
+        localStorage.setItem(
+          "radioverse_admin_offline",
+          JSON.stringify({ email: "admin", name: "Administrator", role: "SUPER_ADMIN" })
+        );
+        router.push("/admin");
+        return;
+      }
+
+      const data = await res.json();
+      setError(data.error || "Authentication failed.");
+      setLoading(false);
     } catch {
-      setError("Network error while attempting sign in.");
+      // In offline / APK file:// environment where API server is not running locally
+      if (cleanUser === "admin" && password === "admin") {
+        localStorage.setItem(
+          "radioverse_admin_offline",
+          JSON.stringify({ email: "admin", name: "Administrator", role: "SUPER_ADMIN" })
+        );
+        router.push("/admin");
+        return;
+      }
+      setError("Invalid username or password. (For APK / Admin demo: admin / admin)");
       setLoading(false);
     }
   };
@@ -61,16 +85,16 @@ export default function AdminLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-              {t.admin.email}
+              Username / Email ID
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@radioverse.in"
+                placeholder="admin"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[var(--background)] border border-[var(--surface-border)] text-[var(--foreground)] focus:outline-hidden focus:border-indigo-500"
               />
             </div>
@@ -78,7 +102,7 @@ export default function AdminLoginPage() {
 
           <div>
             <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-              {t.admin.password}
+              Password
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -87,7 +111,7 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
+                placeholder="admin"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[var(--background)] border border-[var(--surface-border)] text-[var(--foreground)] focus:outline-hidden focus:border-indigo-500"
               />
             </div>
@@ -111,7 +135,7 @@ export default function AdminLoginPage() {
 
         <div className="mt-6 pt-4 border-t border-[var(--surface-border)] text-center">
           <p className="text-[11px] text-[var(--foreground-muted)]">
-            Default SuperAdmin: <span className="font-mono text-slate-400">admin@radioverse.in</span>
+            APK / Admin Access: Username <span className="font-mono text-indigo-400 font-bold">admin</span> & Password <span className="font-mono text-indigo-400 font-bold">admin</span>
           </p>
         </div>
       </div>
