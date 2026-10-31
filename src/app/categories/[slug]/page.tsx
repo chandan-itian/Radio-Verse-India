@@ -8,6 +8,11 @@ interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export function generateStaticParams() {
+  const categories = getAllCategories();
+  return categories.map((c) => ({ slug: c.slug }));
+}
+
 export default async function CategoryDetailPage({ params }: CategoryPageProps) {
   const { slug } = await params;
   const categories = getAllCategories();

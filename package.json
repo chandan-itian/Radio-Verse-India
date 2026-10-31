@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "build:gh-pages": "mv src/app/api src/server-api && GITHUB_PAGES=true next build && mv src/server-api src/app/api && touch out/.nojekyll"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

@@ -159,11 +159,13 @@ export default function SettingsPage() {
       <section className="p-6 rounded-3xl bg-[var(--surface)] border border-[var(--surface-border)] text-xs text-[var(--foreground-muted)] space-y-3">
         <div className="flex items-center gap-2 text-[var(--foreground)] font-bold text-sm">
           <Info className="w-4 h-4 text-indigo-400" />
-          <span>{t.settings.aboutSection}</span>
+          <span>About RadioVerse India</span>
         </div>
-        <p className="leading-relaxed">{t.settings.disclaimer}</p>
-        <p className="text-[11px] text-slate-500 font-mono">
-          {t.settings.version} 2.0.0 (Production Build) • RadioVerse India
+        <p className="leading-relaxed">
+          Legal Notice: RadioVerse India indexes publicly broadcasted audio feeds. All trademarks, channel logos, and streaming rights remain the exclusive property of their respective broadcasters.
+        </p>
+        <p className="text-[11px] text-slate-400 font-mono">
+          Version 2.0.0 (Production Build) • RadioVerse India • Made with ❤️ by Chandan Raj
         </p>
       </section>
     </div>

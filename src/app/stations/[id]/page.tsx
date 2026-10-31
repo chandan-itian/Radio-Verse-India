@@ -1,10 +1,15 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getStationById, getStations } from "@/lib/stations-repository";
+import { CURATED_STATIONS } from "@/lib/curated-stations";
 import { StationDetailClient } from "./station-detail-client";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+export function generateStaticParams() {
+  return CURATED_STATIONS.map((s) => ({ id: s.slug || s.id }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

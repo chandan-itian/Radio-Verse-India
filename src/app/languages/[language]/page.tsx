@@ -2,9 +2,14 @@ import { getStations } from "@/lib/stations-repository";
 import { StationCard } from "@/components/station/station-card";
 import Link from "next/link";
 import { ArrowLeft, Languages } from "lucide-react";
+import { INDIAN_LANGUAGES_CATALOG } from "../page";
 
 interface LanguagePageProps {
   params: Promise<{ language: string }>;
+}
+
+export function generateStaticParams() {
+  return INDIAN_LANGUAGES_CATALOG.map((l) => ({ language: l.id }));
 }
 
 export default async function LanguageDetailPage({ params }: LanguagePageProps) {

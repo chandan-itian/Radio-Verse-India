@@ -8,6 +8,10 @@ interface StatePageProps {
   params: Promise<{ state: string }>;
 }
 
+export function generateStaticParams() {
+  return INDIAN_STATES_LIST.map((s) => ({ state: s.slug }));
+}
+
 export default async function StateDetailPage({ params }: StatePageProps) {
   const { state } = await params;
   const decodedState = decodeURIComponent(state).toLowerCase();
