@@ -14,28 +14,31 @@ export function AdminHeader() {
   const [adminUser, setAdminUser] = useState<any>(null);
 
   useEffect(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("radioverse_admin_offline") : null;
+    if (stored) {
+      try {
+        setAdminUser(JSON.parse(stored));
+      } catch {
+        // ignore
+      }
+    }
+
     fetch("/api/v1/admin/me")
       .then((res) => {
-        if (!res.ok) {
-          throw new Error("unauthorized");
-        }
-        return res.json();
+        if (res.ok) return res.json();
+        return null;
       })
       .then((data) => {
-        if (data?.user) setAdminUser(data.user);
+        if (data?.user) {
+          setAdminUser(data.user);
+        } else if (!stored) {
+          router.push("/admin/login");
+        }
       })
       .catch(() => {
-        // Check offline APK admin session
-        const stored = localStorage.getItem("radioverse_admin_offline");
-        if (stored) {
-          try {
-            setAdminUser(JSON.parse(stored));
-            return;
-          } catch {
-            // ignore
-          }
+        if (!stored) {
+          router.push("/admin/login");
         }
-        router.push("/admin/login");
       });
   }, [router]);
 

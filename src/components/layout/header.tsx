@@ -36,15 +36,22 @@ export function Header() {
 
         {/* Global Search Bar */}
         <form onSubmit={handleSearchSubmit} className="flex-1 max-w-lg">
-          <div className="relative">
+          <div className="relative flex items-center">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-muted)]" />
             <input
               type="text"
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
               placeholder={t.search.placeholder}
-              className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-[var(--background)] border border-[var(--surface-border)] text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+              className="w-full pl-10 pr-12 py-2 rounded-xl text-xs sm:text-sm bg-[var(--background)] border border-[var(--surface-border)] text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
             />
+            <button
+              type="submit"
+              aria-label="Search"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs flex items-center gap-1 transition-all cursor-pointer"
+            >
+              <span>{t.actions.search}</span>
+            </button>
           </div>
         </form>
 

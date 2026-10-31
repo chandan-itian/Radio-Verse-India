@@ -14,6 +14,7 @@ export const INDIAN_STATES_LIST = [
   { slug: "gujarat", name: "Gujarat", capital: "Gandhinagar", region: "West India" },
   { slug: "rajasthan", name: "Rajasthan", capital: "Jaipur", region: "North India" },
   { slug: "telangana", name: "Telangana", capital: "Hyderabad", region: "South India" },
+  { slug: "andhra-pradesh", name: "Andhra Pradesh", capital: "Amaravati", region: "South India" },
 ];
 
 export default function StatesPage() {

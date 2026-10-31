@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { StationItem } from "@/types/station";
 import { StationCard } from "@/components/station/station-card";
 import { useI18n } from "@/lib/i18n";
+import { getAllStations, filterStations } from "@/lib/stations-store";
 import { Search, Filter, Loader2, X, RefreshCw } from "lucide-react";
 
 const INDIAN_LANGUAGES = [
@@ -17,7 +18,6 @@ const INDIAN_LANGUAGES = [
   "bengali",
   "kannada",
   "marathi",
-  "malayalam",
   "gujarati",
   "odia",
   "english",
@@ -35,6 +35,7 @@ const INDIAN_STATES = [
   "Kerala",
   "Gujarat",
   "Uttar Pradesh",
+  "Andhra Pradesh",
 ];
 
 function StationsDirectory() {
@@ -52,56 +53,127 @@ function StationsDirectory() {
   const [language, setLanguage] = useState(langParam);
   const [state, setState] = useState(stateParam);
   const [category, setCategory] = useState(catParam);
-  const [sortBy, setSortBy] = useState(sortParam);
+  const [sortBy, setSortBy] = useState<"popular" | "name" | "recent">(sortParam);
 
   const [stations, setStations] = useState<StationItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Sync state when URL search params change (e.g. from header search or back button)
+  useEffect(() => {
+    const q = searchParams.get("q") || "";
+    const l = searchParams.get("language") || "all";
+    const s = searchParams.get("state") || "all";
+    const c = searchParams.get("category") || "all";
+    const so = (searchParams.get("sort") as any) || "popular";
+
+    setQuery(q);
+    setLanguage(l);
+    setState(s);
+    setCategory(c);
+    setSortBy(so);
+
+    executeFilter(q, l, s, c, so);
+  }, [searchParams]);
+
+  // Execute filtering instantly with local store + online API fallback
+  const executeFilter = useCallback(
+    (qVal: string, lVal: string, sVal: string, cVal: string, sortVal: "popular" | "name" | "recent") => {
+      setLoading(true);
+
+      // 1. Get complete catalog (Curated + Custom added stations)
+      const all = getAllStations();
+      const filtered = filterStations(all, {
+        query: qVal,
+        language: lVal,
+        state: sVal,
+        category: cVal,
+        sortBy: sortVal,
+      });
+
+      setStations(filtered);
+      setTotal(filtered.length);
+      setLoading(false);
+
+      // 2. Try background API call if online server exists
+      try {
+        const params = new URLSearchParams();
+        if (qVal.trim()) params.set("query", qVal.trim());
+        if (lVal !== "all") params.set("language", lVal);
+        if (sVal !== "all") params.set("state", sVal);
+        if (cVal !== "all") params.set("category", cVal);
+        params.set("sortBy", sortVal);
+
+        fetch(`/api/v1/stations?${params.toString()}`)
+          .then((res) => {
+            if (res.ok) return res.json();
+            return null;
+          })
+          .then((json) => {
+            if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+              // Merge server results if richer
+              const serverList: StationItem[] = json.data;
+              const merged = filterStations([...all, ...serverList], {
+                query: qVal,
+                language: lVal,
+                state: sVal,
+                category: cVal,
+                sortBy: sortVal,
+              });
+              // Deduplicate by id
+              const seen = new Set<string>();
+              const unique: StationItem[] = [];
+              for (const item of merged) {
+                if (!seen.has(item.id)) {
+                  seen.add(item.id);
+                  unique.push(item);
+                }
+              }
+              setStations(unique);
+              setTotal(unique.length);
+            }
+          })
+          .catch(() => {
+            // Offline / static - local results are already displayed!
+          });
+      } catch {
+        // ignore
+      }
+    },
+    []
+  );
+
   // Sync state with URL params
   const updateUrl = (newQuery: string, newLang: string, newState: string, newCat: string, newSort: string) => {
     const params = new URLSearchParams();
-    if (newQuery) params.set("q", newQuery);
+    if (newQuery.trim()) params.set("q", newQuery.trim());
     if (newLang !== "all") params.set("language", newLang);
     if (newState !== "all") params.set("state", newState);
     if (newCat !== "all") params.set("category", newCat);
     if (newSort !== "popular") params.set("sort", newSort);
 
-    router.replace(`/stations?${params.toString()}`);
+    const queryString = params.toString();
+    router.replace(`/stations${queryString ? `?${queryString}` : ""}`);
   };
 
-  const fetchStations = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (query.trim()) params.set("query", query.trim());
-      if (language !== "all") params.set("language", language);
-      if (state !== "all") params.set("state", state);
-      if (category !== "all") params.set("category", category);
-      params.set("sortBy", sortBy);
-      params.set("limit", "48");
-
-      const res = await fetch(`/api/v1/stations?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setStations(json.data || []);
-        setTotal(json.pagination?.total || 0);
-      }
-    } catch (err) {
-      console.warn("Failed to load stations:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Initial load and custom station event listener
   useEffect(() => {
-    fetchStations();
-  }, [language, state, category, sortBy]);
+    executeFilter(query, language, state, category, sortBy);
+
+    const handleStationsUpdated = () => {
+      executeFilter(query, language, state, category, sortBy);
+    };
+
+    window.addEventListener("radioverse_stations_updated", handleStationsUpdated);
+    return () => {
+      window.removeEventListener("radioverse_stations_updated", handleStationsUpdated);
+    };
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateUrl(query, language, state, category, sortBy);
-    fetchStations();
+    executeFilter(query, language, state, category, sortBy);
   };
 
   const handleClearFilters = () => {
@@ -111,9 +183,10 @@ function StationsDirectory() {
     setCategory("all");
     setSortBy("popular");
     updateUrl("", "all", "all", "all", "popular");
+    executeFilter("", "all", "all", "all", "popular");
   };
 
-  const hasActiveFilters = query || language !== "all" || state !== "all" || category !== "all";
+  const hasActiveFilters = query.trim() !== "" || language !== "all" || state !== "all" || category !== "all";
 
   return (
     <div className="space-y-6">
@@ -152,9 +225,11 @@ function StationsDirectory() {
           </div>
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold text-xs sm:text-sm shadow-md transition-colors"
+            onClick={handleSearchSubmit}
+            className="px-5 py-2.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] active:scale-95 text-white font-semibold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center gap-1.5"
           >
-            {t.actions.search}
+            <Search className="w-4 h-4" />
+            <span>{t.actions.search}</span>
           </button>
         </form>
 
@@ -227,8 +302,8 @@ function StationsDirectory() {
           {/* Refresh action */}
           <div className="flex items-end">
             <button
-              onClick={() => fetchStations()}
-              className="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-[var(--surface-border)] text-xs font-semibold text-[var(--foreground)] flex items-center justify-center gap-1.5 transition-colors"
+              onClick={() => executeFilter(query, language, state, category, sortBy)}
+              className="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-[var(--surface-border)] text-xs font-semibold text-[var(--foreground)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>{t.actions.refresh}</span>

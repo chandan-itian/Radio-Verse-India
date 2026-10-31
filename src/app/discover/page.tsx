@@ -8,6 +8,8 @@ import { useI18n } from "@/lib/i18n";
 import { Compass, Sparkles, History, Flame, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+import { getAllStations } from "@/lib/stations-store";
+
 export default function DiscoverPage() {
   const { t } = useI18n();
   const [favorites, setFavorites] = useState<StationItem[]>([]);
@@ -19,11 +21,20 @@ export default function DiscoverPage() {
     setFavorites(getLocalFavorites());
     setHistory(getLocalHistory().map((h) => h.station));
 
-    // Fetch trending
+    // Fallback featured from all stations
+    const localFeatured = getAllStations().filter((s) => s.isFeatured);
+    setTrending(localFeatured);
+
+    // Fetch trending from API if available
     fetch("/api/v1/featured")
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.ok) return res.json();
+        return null;
+      })
       .then((json) => {
-        if (json.data) setTrending(json.data);
+        if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+          setTrending(json.data);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
