@@ -108,5 +108,18 @@ Access the administrative interface at `/admin`.
 
 ---
 
+## 👤 Author & Credits
+
+- **Creator & Developer**: **Chandan Raj**
+- **GitHub**: [@chandan-itian](https://github.com/chandan-itian)
+- **Live Project**: [DocToolz on GitHub Pages](https://chandan-itian.github.io/doctoolz/)
+
+<div align="center">
+  <sub>Made with ❤️ by <b>Chandan Raj</b></sub>
+</div>
+
+---
+
+
 ## ⚖️ Legal & Streaming Rights Notice
 RadioVerse India indexes publicly available internet audio streams. All trademarks, service marks, station brand logos, and audio broadcasts remain the exclusive property of their respective broadcasters (Prasar Bharati, Entertainment Network India Ltd, BBC, etc.). RadioVerse India enforces strict egress and playback eligibility standards.
